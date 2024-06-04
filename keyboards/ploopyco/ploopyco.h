@@ -1,4 +1,6 @@
-/* Copyright 2021 Balz Guenat
+/* Copyright 2020 Christopher Courtney, aka Drashna Jael're  (@drashna) <drashna@live.com>
+ * Copyright 2019 Sunjun Kim
+ * Copyright 2020 Ploopy Corporation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,20 +18,22 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <stdbool.h>
+#include "quantum.h"
 
-#define SPLIT_KEYBOARD
-typedef uint8_t pin_t;
+typedef union {
+    uint32_t raw;
+    struct {
+        uint8_t dpi_config;
+    };
+} keyboard_config_t;
 
-extern bool pins[];
-extern bool pinIsInputHigh[];
+extern keyboard_config_t keyboard_config;
+extern uint16_t          dpi_array[];
 
-#define gpio_set_pin_input_high(pin) (mock_set_pin_input_high(pin))
-#define gpio_read_pin(pin) (mock_read_pin(pin))
+enum ploopy_keycodes {
+    DPI_CONFIG = QK_KB_0,
+    DRAG_SCROLL,
+};
 
-uint8_t mock_set_pin_input_high(pin_t pin);
-
-bool mock_read_pin(pin_t pin);
-
-bool setPin(pin_t pin, bool val);
+bool encoder_update_user(uint8_t index, bool clockwise);
+bool encoder_update_kb(uint8_t index, bool clockwise);
