@@ -319,3 +319,18 @@ bool dip_switch_update_user(uint8_t index, bool active) {
     }
     return true;
 }
+
+static pin_t encoders_pad_a[NUM_ENCODERS_MAX_PER_SIDE] = ENCODERS_PAD_A;
+static pin_t encoders_pad_b[NUM_ENCODERS_MAX_PER_SIDE] = ENCODERS_PAD_B;
+uint8_t encoder_state[NUM_ENCODERS];
+void encoder_driver_task(void) {
+    for (uint8_t i = 0; i < NUM_ENCODERS; i++) {
+        uint8_t new_status = (gpio_read_pin(encoders_pad_a[i]) << 0) | (gpio_read_pin(encoders_pad_b[i]) << 1);
+        if ((encoder_state[i] & 0x3) != new_status) {
+            encoder_state[i] <<= 2;
+            encoder_state[i] |= new_status;
+            encoder_queue_event(i, encoder_state[i]);
+        }
+    }
+
+}
