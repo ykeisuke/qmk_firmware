@@ -26,14 +26,7 @@
   },
   "encoder": {
     "rotary": [
-        {"pin_a": "B12", "pin_b": "B13"},
-        {"pin_a": "B12", "pin_b": "B13"},
-        {"pin_a": "B12", "pin_b": "B13"},
-        {"pin_a": "B12", "pin_b": "B13"},
-        {"pin_a": "B12", "pin_b": "B13"},
-        {"pin_a": "B12", "pin_b": "B13"},
-        {"pin_a": "B12", "pin_b": "B13"},
-        {"pin_a": "B12", "pin_b": "B13"}
+      {"pin_a": "B12", "pin_b": "B13"}
     ]
   },
   "features": {

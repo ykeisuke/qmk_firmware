@@ -1,6 +1,7 @@
-/* Copyright 2020 Christopher Courtney, aka Drashna Jael're  (@drashna) <drashna@live.com>
+/* Copyright 2021 Colin Lam (Ploopy Corporation)
+ * Copyright 2020 Christopher Courtney, aka Drashna Jael're  (@drashna) <drashna@live.com>
  * Copyright 2019 Sunjun Kim
- * Copyright 2020 Ploopy Corporation
+ * Copyright 2019 Hiroyuki Okada
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,32 +17,39 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "mouse.h"
+#include "trackball_mini.h"
+#include "wait.h"
+#include "debug.h"
 
 #ifndef OPT_DEBOUNCE
 #    define OPT_DEBOUNCE 5  // (ms) 			Time between scroll events
 #endif
+
 #ifndef SCROLL_BUTT_DEBOUNCE
 #    define SCROLL_BUTT_DEBOUNCE 100  // (ms) 			Time between scroll events
 #endif
+
 #ifndef OPT_THRES
 #    define OPT_THRES 150  // (0-1024) 	Threshold for actication
 #endif
+
 #ifndef OPT_SCALE
 #    define OPT_SCALE 1  // Multiplier for wheel
 #endif
+
 #ifndef PLOOPY_DPI_OPTIONS
 #    define PLOOPY_DPI_OPTIONS \
-        { 1200, 1600, 2400 }
+        { 375, 750, 1375 }
 #    ifndef PLOOPY_DPI_DEFAULT
-#        define PLOOPY_DPI_DEFAULT 1
+#       define PLOOPY_DPI_DEFAULT 1
 #    endif
 #endif
 #ifndef PLOOPY_DPI_DEFAULT
 #    define PLOOPY_DPI_DEFAULT 0
 #endif
+
 #ifndef PLOOPY_DRAGSCROLL_DPI
-#    define PLOOPY_DRAGSCROLL_DPI 100  // Fixed-DPI Drag Scroll
+#    define PLOOPY_DRAGSCROLL_DPI 375  // Fixed-DPI Drag Scroll
 #endif
 #ifndef PLOOPY_DRAGSCROLL_MULTIPLIER
 #    define PLOOPY_DRAGSCROLL_MULTIPLIER 0.75  // Variable-DPI Drag Scroll
@@ -84,17 +92,18 @@ bool encoder_update_kb(uint8_t index, bool clockwise) {
 }
 
 void process_wheel(void) {
-    // Lovingly ripped from the Ploopy Source
+    uint16_t p1 = adc_read(OPT_ENC1_MUX);
+    uint16_t p2 = adc_read(OPT_ENC2_MUX);
+
+    if (debug_encoder) dprintf("OPT1: %d, OPT2: %d\n", p1, p2);
+
+    int8_t dir = opt_encoder_handler(p1, p2);
 
     // If the mouse wheel was just released, do not scroll.
-    if (timer_elapsed(lastMidClick) < SCROLL_BUTT_DEBOUNCE) {
-        return;
-    }
+    if (timer_elapsed(lastMidClick) < SCROLL_BUTT_DEBOUNCE) return;
 
     // Limit the number of scrolls per unit time.
-    if (timer_elapsed(lastScroll) < OPT_DEBOUNCE) {
-        return;
-    }
+    if (timer_elapsed(lastScroll) < OPT_DEBOUNCE) return;
 
     // Don't scroll if the middle button is depressed.
     if (is_scroll_clicked) {
@@ -103,15 +112,17 @@ void process_wheel(void) {
 #endif
     }
 
-    lastScroll  = timer_read();
-    uint16_t p1 = adc_read(OPT_ENC1_MUX);
-    uint16_t p2 = adc_read(OPT_ENC2_MUX);
-    if (debug_encoder) dprintf("OPT1: %d, OPT2: %d\n", p1, p2);
-
-    int dir = opt_encoder_handler(p1, p2);
-
     if (dir == 0) return;
     encoder_update_kb(0, dir > 0);
+
+    lastScroll = timer_read();
+}
+
+void pointing_device_init_kb(void) {
+    opt_encoder_init();
+
+    // set the DPI.
+    pointing_device_set_cpi(dpi_array[keyboard_config.dpi_config]);
 }
 
 report_mouse_t pointing_device_task_kb(report_mouse_t mouse_report) {
@@ -133,9 +144,7 @@ report_mouse_t pointing_device_task_kb(report_mouse_t mouse_report) {
 }
 
 bool process_record_kb(uint16_t keycode, keyrecord_t* record) {
-    if (debug_mouse) {
-        dprintf("KL: kc: %u, col: %u, row: %u, pressed: %u\n", keycode, record->event.key.col, record->event.key.row, record->event.pressed);
-    }
+    xprintf("KL: kc: %u, col: %u, row: %u, pressed: %u\n", keycode, record->event.key.col, record->event.key.row, record->event.pressed);
 
     // Update Timer to prevent accidental scrolls
     if ((record->event.key.col == 1) && (record->event.key.row == 0)) {
@@ -143,9 +152,7 @@ bool process_record_kb(uint16_t keycode, keyrecord_t* record) {
         is_scroll_clicked = record->event.pressed;
     }
 
-    if (!process_record_user(keycode, record)) {
-        return false;
-    }
+    if (!process_record_user(keycode, record)) return false;
 
     if (keycode == DPI_CONFIG && record->event.pressed) {
         keyboard_config.dpi_config = (keyboard_config.dpi_config + 1) % DPI_OPTION_SIZE;
@@ -160,11 +167,7 @@ bool process_record_kb(uint16_t keycode, keyrecord_t* record) {
         {
             is_drag_scroll ^= 1;
         }
-#ifdef PLOOPY_DRAGSCROLL_FIXED
         pointing_device_set_cpi(is_drag_scroll ? PLOOPY_DRAGSCROLL_DPI : dpi_array[keyboard_config.dpi_config]);
-#else
-        pointing_device_set_cpi(is_drag_scroll ? (dpi_array[keyboard_config.dpi_config] * PLOOPY_DRAGSCROLL_MULTIPLIER) : dpi_array[keyboard_config.dpi_config]);
-#endif
     }
 
     return true;
@@ -172,9 +175,9 @@ bool process_record_kb(uint16_t keycode, keyrecord_t* record) {
 
 // Hardware Setup
 void keyboard_pre_init_kb(void) {
-    // debug_enable  = true;
-    // debug_matrix  = true;
-    // debug_mouse   = true;
+    // debug_enable = true;
+    // debug_matrix = true;
+    // debug_mouse = true;
     // debug_encoder = true;
 
     setPinInput(OPT_ENC1);
@@ -193,19 +196,7 @@ void keyboard_pre_init_kb(void) {
     }
 #endif
 
-    // This is the debug LED.
-#if defined(DEBUG_LED_PIN)
-    setPinOutput(DEBUG_LED_PIN);
-    writePin(DEBUG_LED_PIN, debug_enable);
-#endif
-
     keyboard_pre_init_user();
-}
-
-void pointing_device_init_kb(void) {
-    pointing_device_set_cpi(dpi_array[keyboard_config.dpi_config]);
-    // initialize the scroll wheel's optical encoder
-    opt_encoder_init();
 }
 
 void eeconfig_init_kb(void) {

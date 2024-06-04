@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "mouse.h"
+#include "trackball.h"
 
 #ifndef OPT_DEBOUNCE
 #    define OPT_DEBOUNCE 5  // (ms) 			Time between scroll events
@@ -84,6 +84,7 @@ bool encoder_update_kb(uint8_t index, bool clockwise) {
 }
 
 void process_wheel(void) {
+    // TODO: Replace this with interrupt driven code,  polling is S L O W
     // Lovingly ripped from the Ploopy Source
 
     // If the mouse wheel was just released, do not scroll.
@@ -118,7 +119,12 @@ report_mouse_t pointing_device_task_kb(report_mouse_t mouse_report) {
     process_wheel();
 
     if (is_drag_scroll) {
+#ifdef PLOOPY_DRAGSCROLL_H_INVERT
+        // Invert horizontal scroll direction
+        mouse_report.h = -mouse_report.x;
+#else
         mouse_report.h = mouse_report.x;
+#endif
 #ifdef PLOOPY_DRAGSCROLL_INVERT
         // Invert vertical scroll direction
         mouse_report.v = -mouse_report.y;
@@ -133,8 +139,8 @@ report_mouse_t pointing_device_task_kb(report_mouse_t mouse_report) {
 }
 
 bool process_record_kb(uint16_t keycode, keyrecord_t* record) {
-    if (debug_mouse) {
-        dprintf("KL: kc: %u, col: %u, row: %u, pressed: %u\n", keycode, record->event.key.col, record->event.key.row, record->event.pressed);
+    if (true) {
+        xprintf("KL: kc: %u, col: %u, row: %u, pressed: %u\n", keycode, record->event.key.col, record->event.key.row, record->event.pressed);
     }
 
     // Update Timer to prevent accidental scrolls
@@ -166,6 +172,12 @@ bool process_record_kb(uint16_t keycode, keyrecord_t* record) {
         pointing_device_set_cpi(is_drag_scroll ? (dpi_array[keyboard_config.dpi_config] * PLOOPY_DRAGSCROLL_MULTIPLIER) : dpi_array[keyboard_config.dpi_config]);
 #endif
     }
+
+/* If Mousekeys is disabled, then use handle the mouse button
+ * keycodes.  This makes things simpler, and allows usage of
+ * the keycodes in a consistent manner.  But only do this if
+ * Mousekeys is not enable, so it's not handled twice.
+ */
 
     return true;
 }
@@ -222,4 +234,10 @@ void matrix_init_kb(void) {
         eeconfig_init_kb();
     }
     matrix_init_user();
+}
+
+void keyboard_post_init_kb(void) {
+    pointing_device_set_cpi(dpi_array[keyboard_config.dpi_config]);
+
+    keyboard_post_init_user();
 }
