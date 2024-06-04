@@ -162,45 +162,25 @@ void encoder_driver_init(void) {
 static void encoder_handle_state_change(uint8_t index, uint8_t state) {
     uint8_t i = index;
 
-#ifdef SPLIT_KEYBOARD
-    index += thisHand;
-#endif
-
-#ifdef ENCODER_RESOLUTIONS
-    const uint8_t resolution = encoder_resolutions[index];
-#else
     const uint8_t resolution = ENCODER_RESOLUTION;
-#endif
 
     encoder_pulses[i] += encoder_LUT[state & 0xF];
+    printf("Drivers.encoder encoder_handle_state_change encoder_pulses[%d] %d\n", i, encoder_pulses[i]);
 
-#ifdef ENCODER_DEFAULT_POS
-    if ((encoder_pulses[i] >= resolution) || (encoder_pulses[i] <= -resolution) || ((state & 0x3) == ENCODER_DEFAULT_POS)) {
-        if (encoder_pulses[i] >= 1) {
-#else
     if (encoder_pulses[i] >= resolution) {
-#endif
-            printf("Drivers.encoder encoder_handle_state_change ENCODER_COUNTER_CLOCKWISE\n");
-            printf("+ index: %d\n", index);
-            printf("+ state: %d\n", state);
-            encoder_queue_event(index, ENCODER_COUNTER_CLOCKWISE);
-        }
-
-#ifdef ENCODER_DEFAULT_POS
-        if (encoder_pulses[i] <= -1) {
-#else
-    if (encoder_pulses[i] <= -resolution) { // direction is arbitrary here, but this clockwise
-#endif
-            printf("Drivers.encoder encoder_handle_state_change ENCODER_CLOCKWISE\n");
-            printf("+ index: %d\n", index);
-            printf("+ state: %d\n", state);
-            encoder_queue_event(index, ENCODER_CLOCKWISE);
-        }
-        encoder_pulses[i] %= resolution;
-#ifdef ENCODER_DEFAULT_POS
-        encoder_pulses[i] = 0;
+        printf("Drivers.encoder encoder_handle_state_change ENCODER_COUNTER_CLOCKWISE\n");
+        printf("+ index: %d\n", index);
+        printf("+ state: %d\n", state);
+        encoder_queue_event(index, ENCODER_COUNTER_CLOCKWISE);
     }
-#endif
+
+    if (encoder_pulses[i] <= -resolution) { // direction is arbitrary here, but this clockwise
+        printf("Drivers.encoder encoder_handle_state_change ENCODER_CLOCKWISE\n");
+        printf("+ index: %d\n", index);
+        printf("+ state: %d\n", state);
+        encoder_queue_event(index, ENCODER_CLOCKWISE);
+    }
+    encoder_pulses[i] %= resolution;
 }
 
 void encoder_quadrature_handle_read(uint8_t index, uint8_t pin_a_state, uint8_t pin_b_state) {
