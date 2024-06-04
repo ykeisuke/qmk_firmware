@@ -41,3 +41,4 @@
    - etc.
 */
 // #define MIDI_ADVANCED
+// #define NUM_ENCODERS 3

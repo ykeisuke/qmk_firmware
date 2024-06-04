@@ -5,6 +5,7 @@
 #include "action.h"
 #include "encoder.h"
 #include "wait.h"
+#include <stdio.h>
 
 #ifndef ENCODER_MAP_KEY_DELAY
 #    define ENCODER_MAP_KEY_DELAY TAP_CODE_DELAY
@@ -32,6 +33,10 @@ static bool encoder_handle_queue(void) {
     uint8_t index;
     bool    clockwise;
     while (encoder_dequeue_event(&index, &clockwise)) {
+        printf("Quantum encoder_handle_queue\n");
+        printf("+ index: %d\n", index);
+        printf("+ clockwise: %d\n", clockwise);
+        printf("+ changed: %d\n", changed);
 #ifdef ENCODER_MAP_ENABLE
 
         // The delays below cater for Windows and its wonderful requirements.
@@ -99,6 +104,7 @@ bool encoder_queue_empty(void) {
 }
 
 bool encoder_queue_event_advanced(encoder_events_t *events, uint8_t index, bool clockwise) {
+    printf("Quantum encoder_queue_event_advanced\n");
     // Drop out if we're full
     if (encoder_queue_full_advanced(events)) {
         return false;
@@ -107,6 +113,12 @@ bool encoder_queue_event_advanced(encoder_events_t *events, uint8_t index, bool 
     // Append the event
     encoder_event_t new_event   = {.index = index, .clockwise = clockwise ? 1 : 0};
     events->queue[events->head] = new_event;
+
+    printf("Quantum encoder_queue_event_advanced\n");
+    printf("+ events->head: %d\n", events->head);
+    printf("+ index: %d\n", index);
+    printf("+ clockwise: %d\n", clockwise);
+
 
     // Increment the head index
     events->head = (events->head + 1) % MAX_QUEUED_ENCODER_EVENTS;
@@ -125,6 +137,12 @@ bool encoder_dequeue_event_advanced(encoder_events_t *events, uint8_t *index, bo
     *index                = event.index;
     *clockwise            = event.clockwise;
 
+    //  ここで得られる文字が違えば、そのindexやclockwiseが違う
+    // printf("Quantum encoder_dequeue_event_advanced\n");
+    // printf("+ events->tail: %d\n", events->tail);
+    // printf("+ index: %d\n", *index);
+    // printf("+ clockwise: %d\n", *clockwise);
+
     // Increment the tail index
     events->tail = (events->tail + 1) % MAX_QUEUED_ENCODER_EVENTS;
     events->dequeued++;
@@ -133,6 +151,9 @@ bool encoder_dequeue_event_advanced(encoder_events_t *events, uint8_t *index, bo
 }
 
 bool encoder_queue_event(uint8_t index, bool clockwise) {
+    printf("Quantum encoder_queue_event\n");
+    printf("+ index: %d\n", index);
+    printf("+ clockwise: %d\n", clockwise);
     return encoder_queue_event_advanced(&encoder_events, index, clockwise);
 }
 

@@ -161,6 +161,16 @@ float plover_song[][2]    = SONG(PLOVER_SOUND);
 float plover_gb_song[][2] = SONG(PLOVER_GOODBYE_SOUND);
 #endif
 
+
+#if defined(ENCODER_MAP_ENABLE)
+const uint16_t PROGMEM encoder_map[][NUM_ENCODERS][2] = {
+    [_QWERTY] =   { ENCODER_CCW_CW(KC_VOLU, KC_VOLD), ENCODER_CCW_CW(RGB_TOG, RGB_MOD), ENCODER_CCW_CW(KC_UP, KC_DOWN), },
+    [_LOWER] =  { ENCODER_CCW_CW(KC_VOLU, KC_VOLD), ENCODER_CCW_CW(RGB_TOG, RGB_MOD), ENCODER_CCW_CW(KC_UP, KC_DOWN), },
+    [_RAISE] =  { ENCODER_CCW_CW(KC_VOLU, KC_VOLD), ENCODER_CCW_CW(RGB_TOG, RGB_MOD), ENCODER_CCW_CW(KC_UP, KC_DOWN), },
+    [_ADJUST] = { ENCODER_CCW_CW(KC_VOLU, KC_VOLD), ENCODER_CCW_CW(RGB_TOG, RGB_MOD), ENCODER_CCW_CW(KC_UP, KC_DOWN), },
+};
+#endif
+
 layer_state_t layer_state_set_user(layer_state_t state) {
     return update_tri_layer_state(state, _LOWER, _RAISE, _ADJUST);
 }

@@ -19,6 +19,7 @@
 #include <hal_pal.h>
 #include <math.h>
 #include "wait.h"
+#include <stdio.h>
 
 // STM32-specific watchdog config calculations
 // timeout = 31.25us * PR * (RL + 1)
@@ -112,6 +113,8 @@ bool matrix_scan_custom(matrix_row_t current_matrix[]) {
 }
 
 uint8_t encoder_quadrature_read_pin(uint8_t index, bool pad_b) {
+    printf("matrix.c encoder_quadrature_read_pin, index %d pad_b %d\n", index, pad_b);
+
     pin_t pin = pad_b ? B13: B12;
     gpio_set_pin_input_high(pin);
     gpio_write_pin_low(matrix_row_pins[index]);

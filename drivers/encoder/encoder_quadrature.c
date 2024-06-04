@@ -9,6 +9,7 @@
 #include "action.h"
 #include "keycodes.h"
 #include "wait.h"
+#include <stdio.h>
 
 #ifdef SPLIT_KEYBOARD
 #    include "split_util.h"
@@ -179,7 +180,9 @@ static void encoder_handle_state_change(uint8_t index, uint8_t state) {
 #else
     if (encoder_pulses[i] >= resolution) {
 #endif
-
+            printf("Drivers.encoder encoder_handle_state_change ENCODER_COUNTER_CLOCKWISE\n");
+            printf("+ index: %d\n", index);
+            printf("+ state: %d\n", state);
             encoder_queue_event(index, ENCODER_COUNTER_CLOCKWISE);
         }
 
@@ -188,6 +191,9 @@ static void encoder_handle_state_change(uint8_t index, uint8_t state) {
 #else
     if (encoder_pulses[i] <= -resolution) { // direction is arbitrary here, but this clockwise
 #endif
+            printf("Drivers.encoder encoder_handle_state_change ENCODER_CLOCKWISE\n");
+            printf("+ index: %d\n", index);
+            printf("+ state: %d\n", state);
             encoder_queue_event(index, ENCODER_CLOCKWISE);
         }
         encoder_pulses[i] %= resolution;
@@ -202,6 +208,8 @@ void encoder_quadrature_handle_read(uint8_t index, uint8_t pin_a_state, uint8_t 
     if ((encoder_state[index] & 0x3) != state) {
         encoder_state[index] <<= 2;
         encoder_state[index] |= state;
+        // ここが間違ったindexとか、stateが渡される
+        // encoder_driver_task を上書きしてしまえばいい
         encoder_handle_state_change(index, encoder_state[index]);
     }
 }
